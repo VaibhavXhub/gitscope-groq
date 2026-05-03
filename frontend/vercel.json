@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://gitscope-backend-deba.onrender.com"
+      "destination": "https://gitscope-backend-deba.onrender.com/api/:path*"
     }
   ]
 }

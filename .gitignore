@@ -10,3 +10,6 @@ __pycache__/
 *.pyd
 .Python
 .env
+
+# Vite build output
+frontend/dist/
