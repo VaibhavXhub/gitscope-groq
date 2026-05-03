@@ -31,7 +31,7 @@ async def fetch_repo_node(state: RepoState) -> dict:
 
 async def analyze_code_node(state: RepoState) -> dict:
     if state.get("error"):
-        return {}
+        return {"analysis": state.get("analysis", {})}
     repo = state["repo_data"]
     context = f"""
 Repository: {repo['metadata']['full_name']}
@@ -50,7 +50,7 @@ Key Files: {json.dumps({k: v[:500] for k, v in repo['key_files'].items()}, inden
 
 async def flowchart_node(state: RepoState) -> dict:
     if state.get("error"):
-        return {}
+        return {"flowchart": state.get("flowchart", "")}
     repo = state["repo_data"]
     analysis = state.get("analysis", {})
     context = f"""
@@ -97,7 +97,7 @@ File Tree: {chr(10).join(repo['file_tree'][:80])}
 
 async def tech_stack_node(state: RepoState) -> dict:
     if state.get("error"):
-        return {}
+        return {"tech_stack": state.get("tech_stack", [])}
     analysis = state.get("analysis", {})
     tech_stack = list(analysis.get("tech_stack", []))
     file_tree = state["repo_data"]["file_tree"]
@@ -117,7 +117,7 @@ async def tech_stack_node(state: RepoState) -> dict:
 
 async def issue_detector_node(state: RepoState) -> dict:
     if state.get("error"):
-        return {}
+        return {"issues": state.get("issues", []), "score": state.get("score", "N/A")}
     repo = state["repo_data"]
     file_tree = repo["file_tree"]
     key_files = repo["key_files"]
@@ -143,7 +143,7 @@ README: {key_files.get('README.md', 'NOT FOUND')[:800]}
 
 async def summarizer_node(state: RepoState) -> dict:
     if state.get("error"):
-        return {}
+        return {"summary": state.get("summary", {})}
     repo = state["repo_data"]
     analysis = state.get("analysis", {})
     readme = list(repo["key_files"].values())[0][:2000] if repo["key_files"] else "No README"
