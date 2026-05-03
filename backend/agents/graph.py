@@ -1,5 +1,6 @@
 import json
 import asyncio
+import re
 import os
 from typing import TypedDict
 from dotenv import load_dotenv
@@ -62,19 +63,37 @@ File Tree: {chr(10).join(repo['file_tree'][:80])}
         response = await asyncio.get_event_loop().run_in_executor(
             None, lambda: groq_chat(FLOWCHART_PROMPT, context, temperature=0.2)
         )
-        if "```mermaid" in response:
-            start = response.index("```mermaid") + len("```mermaid")
-            end = response.index("```", start)
-            flowchart = response[start:end].strip()
-        elif "graph " in response:
-            flowchart = response.strip()
+
+        resp = response.strip()
+
+        # Extract mermaid code from response
+        if "```mermaid" in resp:
+            start = resp.index("```mermaid") + len("```mermaid")
+            end = resp.index("```", start)
+            flowchart = resp[start:end].strip()
+        elif "```" in resp:
+            start = resp.index("```") + 3
+            end = resp.index("```", start)
+            flowchart = resp[start:end].strip()
         else:
-            flowchart = "graph TD\n    A[Repository] --> B[Analysis Complete]"
+            flowchart = resp
+
+        # Validate it starts with a mermaid keyword
+        valid = ["graph ", "flowchart ", "sequenceDiagram", "classDiagram",
+                 "stateDiagram", "erDiagram", "gantt", "pie"]
+        if not any(flowchart.startswith(v) for v in valid):
+            match = re.search(r'(graph\s+(?:TD|LR|TB|BT|RL)[\s\S]*)', resp)
+            if match:
+                flowchart = match.group(1).strip()
+            else:
+                flowchart = "graph TD\n    A[Repository] --> B[Analysis Complete]"
+
+        # Remove HTML tags
+        flowchart = re.sub(r'<[^>]+>', '', flowchart).strip()
+
         return {"flowchart": flowchart}
     except Exception as e:
-        repo_name = state["repo_data"]["metadata"]["name"]
-        lang = state["repo_data"]["metadata"]["language"] or "Code"
-        return {"flowchart": f"graph TD\n    User --> {repo_name}\n    {repo_name} --> {lang}\n    {lang} --> Output"}
+        return {"flowchart": "graph TD\n    A[Error generating flowchart]"}
 
 async def tech_stack_node(state: RepoState) -> dict:
     if state.get("error"):
